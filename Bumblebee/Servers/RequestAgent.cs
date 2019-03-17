@@ -266,29 +266,46 @@ namespace Bumblebee.Servers
 
                     request.Header.Write(pipeStream);
 
-					//if (request.Cookies.Items.Count > 0)
-					//{
-					//	HeaderTypeFactory.Write(HeaderTypeFactory.COOKIE, pipeStream);
-					//	foreach (var _item in request.Cookies.Items)
-					//	{
-					//		pipeStream.Write(Encoding.ASCII.GetBytes($"{_item.Key}={_item.Value};"));
-					//	}
-					//	pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
-					//}
-
 					if (request.Cookies.Items.Count > 0)
 					{
-						StringBuilder _sbuilder = new StringBuilder();
+						HeaderTypeFactory.Write(HeaderTypeFactory.COOKIE, pipeStream);
+						int _i = 0, _iLast = request.Cookies.Items.Count - 1;
 						foreach (var _item in request.Cookies.Items)
 						{
-							_sbuilder.Append($"{_item.Key}={_item.Value};");
+							if (_i == _iLast)
+							{
+								pipeStream.Write(
+										Encoding.ASCII.GetBytes(
+											$"{_item.Key}={_item.Value};".TrimEnd(';')
+										)
+									);
+							}
+							else
+							{
+								pipeStream.Write(
+										Encoding.ASCII.GetBytes(
+											$"{_item.Key}={_item.Value};"
+										)
+									);
+							}
+							_i++;
 						}
-						new HeaderValue(
-								HeaderTypeFactory.Find(HeaderTypeFactory.COOKIE),
-								_sbuilder.ToString().TrimEnd(';')
-							)
-							.Write(pipeStream);
+						pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
 					}
+
+					//if (request.Cookies.Items.Count > 0)
+					//{
+					//	StringBuilder _sbuilder = new StringBuilder();
+					//	foreach (var _item in request.Cookies.Items)
+					//	{
+					//		_sbuilder.Append($"{_item.Key}={_item.Value};");
+					//	}
+					//	new HeaderValue(
+					//			HeaderTypeFactory.Find(HeaderTypeFactory.COOKIE),
+					//			_sbuilder.ToString().TrimEnd(';')
+					//		)
+					//		.Write(pipeStream);
+					//}
 					int bodylength = request.Length;
                     while (bodylength > 0)
                     {

@@ -10,7 +10,7 @@ namespace Bumblebee.BaseSample
             g = new Gateway();
             g.HttpOptions(h =>
             {
-                h.Port = 9090;//设置监听商品，默认8080
+                h.Port = 5000;//设置监听商品，默认8080
                 h.LogToConsole = true;
                
             });
