@@ -22,8 +22,12 @@ namespace Bumblebee.Servers
             Uri = uri;
             Host = uri.Host;
             Port = uri.Port;
-            Available = true;
-            MaxConnections = maxConnections;
+#if DEBUG
+			Available = true;
+#else
+            Available = false;
+#endif
+			MaxConnections = maxConnections;
             Gateway = gateway;
             for (int i = 0; i < 10; i++)
             {
@@ -32,7 +36,6 @@ namespace Bumblebee.Servers
             mConnections = 10;
             mCount = 10;
             MaxSocketErrors = 5;
-            this.Available = false;
         }
 
         private System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
@@ -40,8 +43,12 @@ namespace Bumblebee.Servers
         private int mVerifyStatus = 0;
 
         public async void Verify()
-        {
-            if (System.Threading.Interlocked.CompareExchange(ref mVerifyStatus, 1, 0) == 0)
+		{
+#if DEBUG
+			return;
+#else
+#endif
+			if (System.Threading.Interlocked.CompareExchange(ref mVerifyStatus, 1, 0) == 0)
             {
                 try
                 {

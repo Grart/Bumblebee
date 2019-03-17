@@ -14,7 +14,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BeetleX.FastHttpApi" Version="1.3.2.2" />
+    <PackageReference Include="BeetleX" Version="1.2.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="BeetleX.FastHttpApi">
+      <HintPath>..\..\FastHttpApi\src\bin\Debug\netcoreapp2.1\BeetleX.FastHttpApi.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
