@@ -127,7 +127,11 @@ namespace Bumblebee
             return this;
         }
 
-        private void OnRequest(object sender, EventHttpRequestArgs e)
+		/// <summary>
+		/// see ref=<see cref="Open"/>
+		/// HttpServer.HttpRequesting += OnRequest
+		/// </summary>
+		private void OnRequest(object sender, EventHttpRequestArgs e)
         {
             try
             {
