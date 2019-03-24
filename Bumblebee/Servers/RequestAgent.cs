@@ -25,11 +25,67 @@ namespace Bumblebee.Servers
             mClientAgent = clientAgent;
             mClientAgent.Client.ClientError = OnSocketError;
             mClientAgent.Client.DataReceive = OnReveive;
-            mBuffer = mClientAgent.Buffer;
+			var _pStream = mClientAgent.Client.Stream as PipeStream;
+			if (null != _pStream)
+			{
+				bool _init = true; 
+				var _act = _pStream.FlashCompleted;
+				_pStream.FlashCompleted = buf =>
+				{
+					if (_init)
+					{
+						_init = false;
+						var _f = typeof(AsyncTcpClient).GetField(
+							"mSendEventArgs", 
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+							);
+						if (_f != null)
+						{
+							var _fVal = _f.GetValue(mClientAgent.Client) as BeetleX.Buffers.SocketAsyncEventArgsX;
+							if (null != _fVal)
+							{
+								_fVal.Completed += SendEventArgs_Completed;
+							}
+						}
+
+
+						 _f = typeof(AsyncTcpClient).GetField(
+							"mReceiveEventArgs",
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+							);
+						if (_f != null)
+						{
+							var _fVal = _f.GetValue(mClientAgent.Client) as BeetleX.Buffers.SocketAsyncEventArgsX;
+							if (null != _fVal)
+							{
+								_fVal.Completed += ReceiveEventArgs_Completed;
+							}
+						}
+					}
+
+					request.Server.Log(
+							BeetleX.EventArgs.LogType.Info,
+							$"Begin FlashCompleted"
+						);
+					_act(buf);
+					request.Server.Log(
+							BeetleX.EventArgs.LogType.Info,
+							$"End FlashCompleted"
+						);
+				};
+			}
+			mBuffer = mClientAgent.Buffer;
             Status = RequestStatus.None;
         }
 
-        private byte[] mBuffer;
+		private void SendEventArgs_Completed(object sender, SocketAsyncEventArgs e)
+		{
+		}
+		private void ReceiveEventArgs_Completed(object sender, SocketAsyncEventArgs e)
+		{
+		}
+
+		private byte[] mBuffer;
 
         private TcpClientAgent mClientAgent;
 
@@ -207,8 +263,13 @@ namespace Bumblebee.Servers
                 }
             }
         }
-
-        private void OnReveive(IClient c, ClientReceiveArgs reader)
+		/*
+		 * BeetleX.dll!BeetleX.Buffers.SocketAsyncEventArgsX.AsyncFrom(System.Net.Sockets.Socket socket, object useToken, int size)=>socket.ReceiveAsync(this)
+		 * BeetleX.dll!BeetleX.Buffers.Buffer.AsyncFrom(BeetleX.Buffers.SocketAsyncEventArgsX argsX, System.Net.Sockets.Socket socket)
+		 * BeetleX.dll!BeetleX.Clients.AsyncTcpClient.BeginReceive()
+		 * BeetleX.dll!BeetleX.Clients.AsyncTcpClient.Connect()
+		 * */
+		private void OnReveive(IClient c, ClientReceiveArgs reader)
         {
             PipeStream stream = reader.Stream.ToPipeStream();
             if (Status >= RequestStatus.Responding)
@@ -266,32 +327,32 @@ namespace Bumblebee.Servers
 
                     request.Header.Write(pipeStream);
 
-					if (request.Cookies.Items.Count > 0)
-					{
-						HeaderTypeFactory.Write(HeaderTypeFactory.COOKIE, pipeStream);
-						int _i = 0, _iLast = request.Cookies.Items.Count - 1;
-						foreach (var _item in request.Cookies.Items)
-						{
-							if (_i == _iLast)
-							{
-								pipeStream.Write(
-										Encoding.ASCII.GetBytes(
-											$"{_item.Key}={_item.Value};".TrimEnd(';')
-										)
-									);
-							}
-							else
-							{
-								pipeStream.Write(
-										Encoding.ASCII.GetBytes(
-											$"{_item.Key}={_item.Value};"
-										)
-									);
-							}
-							_i++;
-						}
-						pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
-					}
+					//if (request.Cookies.Items.Count > 0)
+					//{
+					//	HeaderTypeFactory.Write(HeaderTypeFactory.COOKIE, pipeStream);
+					//	int _i = 0, _iLast = request.Cookies.Items.Count - 1;
+					//	foreach (var _item in request.Cookies.Items)
+					//	{
+					//		if (_i == _iLast)
+					//		{
+					//			pipeStream.Write(
+					//					Encoding.ASCII.GetBytes(
+					//						$"{_item.Key}={_item.Value};".TrimEnd(';')
+					//					)
+					//				);
+					//		}
+					//		else
+					//		{
+					//			pipeStream.Write(
+					//					Encoding.ASCII.GetBytes(
+					//						$"{_item.Key}={_item.Value};"
+					//					)
+					//				);
+					//		}
+					//		_i++;
+					//	}
+					//	pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
+					//}
 
 					//if (request.Cookies.Items.Count > 0)
 					//{
@@ -314,9 +375,18 @@ namespace Bumblebee.Servers
                         bodylength -= len;
                     }
                     Status = RequestStatus.Responding;
-                    mClientAgent.Client.Stream.Flush();
-                }
-                catch (Exception e_)
+					/* BeetleX.dll!BeetleX.Buffers.SocketAsyncEventArgsX.InvokeCompleted()
+					 * BeetleX.dll!BeetleX.Buffers.SocketAsyncEventArgsX.AsyncTo(System.Net.Sockets.Socket socket, object userToken, int length)=>socket.SendAsyn
+					 * BeetleX.dll!BeetleX.Buffers.Buffer.AsyncTo(BeetleX.Buffers.SocketAsyncEventArgsX argsX, System.Net.Sockets.Socket socket)
+					 * BeetleX.dll!BeetleX.Clients.AsyncTcpClient.CommitBuffer(BeetleX.Buffers.IBuffer buffer)
+					 * BeetleX.dll!BeetleX.Clients.AsyncTcpClient.ProcessSendMessages()
+					 * BeetleX.dll!BeetleX.Clients.AsyncTcpClient.Send(object data)
+					 * BeetleX.dll!BeetleX.Clients.AsyncTcpClient.OnWriterFlash(BeetleX.Buffers.IBuffer data)
+					 * BeetleX.dll!BeetleX.Buffers.PipeStream.Flush()
+					 * */
+					mClientAgent.Client.Stream.Flush();///<see cref="AsyncTcpClient.OnWriterFlash"/> 
+				}
+				catch (Exception e_)
                 {
                     string error = $"gateway {request.RemoteIPAddress} {request.Method} {request.Url} to {Server.Host}:{Server.Port} error {e_.Message}@{e_.StackTrace}";
                     if (request.Server.EnableLog(BeetleX.EventArgs.LogType.Error))
