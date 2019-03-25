@@ -13,8 +13,12 @@ namespace Bumblebee.Servers
 {
     class RequestAgent
     {
-
-        public RequestAgent(TcpClientAgent clientAgent, ServerAgent serverAgent, HttpRequest request, HttpResponse response)
+        public RequestAgent(
+				TcpClientAgent clientAgent, 
+				ServerAgent serverAgent, 
+				HttpRequest request, 
+				HttpResponse response
+			)
         {
             mTransferEncoding = false;
             mRequestLength = 0;
@@ -293,8 +297,12 @@ namespace Bumblebee.Servers
             if (mClientAgent.Client.IsConnected)
             {
                 try
-                {
-                    PipeStream pipeStream = mClientAgent.Client.Stream.ToPipeStream();
+				{
+					if (Request.Server.EnableLog(BeetleX.EventArgs.LogType.Info))
+					{
+						Request.Server.Log(BeetleX.EventArgs.LogType.Info, $"gateway {Request.RemoteIPAddress} {Request.Method} {Request.Url} request {Server.Host}:{Server.Port} netstream writing");
+					}
+					PipeStream pipeStream = mClientAgent.Client.Stream.ToPipeStream();
                     byte[] buffer = mBuffer;
                     int offset = 0;
                     var len = Encoding.UTF8.GetBytes(request.Method, 0, request.Method.Length, buffer, offset);
@@ -351,7 +359,7 @@ namespace Bumblebee.Servers
 					//		}
 					//		_i++;
 					//	}
-					//	pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
+					//////	pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
 					//}
 
 					//if (request.Cookies.Items.Count > 0)
@@ -367,6 +375,10 @@ namespace Bumblebee.Servers
 					//		)
 					//		.Write(pipeStream);
 					//}
+
+					//HTTP报文Head结尾需要再补个/r/n，也就是说报文Head结尾是两个/r/n
+					pipeStream.Write(HeaderTypeFactory.LINE_BYTES, 0, 2);
+
 					int bodylength = request.Length;
                     while (bodylength > 0)
                     {
@@ -385,6 +397,10 @@ namespace Bumblebee.Servers
 					 * BeetleX.dll!BeetleX.Buffers.PipeStream.Flush()
 					 * */
 					mClientAgent.Client.Stream.Flush();///<see cref="AsyncTcpClient.OnWriterFlash"/> 
+					if (Request.Server.EnableLog(BeetleX.EventArgs.LogType.Info))
+					{
+						Request.Server.Log(BeetleX.EventArgs.LogType.Info, $"gateway {Request.RemoteIPAddress} {Request.Method} {Request.Url} request {Server.Host}:{Server.Port} netstream writed");
+					}
 				}
 				catch (Exception e_)
                 {

@@ -9,15 +9,4 @@
     <ProjectReference Include="..\Bumblebee\Bumblebee.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="BeetleX">
-      <HintPath>..\..\BeetleX\src\BeetleX\bin\Debug\netcoreapp2.1\BeetleX.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-    <Reference Include="BeetleX.FastHttpApi">
-      <HintPath>..\..\FastHttpApi\src\bin\Debug\netcoreapp2.1\BeetleX.FastHttpApi.dll</HintPath>
-      <Private>true</Private>
-    </Reference>
-  </ItemGroup>
-
 </Project>
